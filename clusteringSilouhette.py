@@ -7,13 +7,13 @@ import pandas as pd;
 import numpy as np;
 
 def main():
-	dataset = datasets.load_iris();
-	#dataset = readDataSet("D_C_all_AM.csv");
+	#dataset = datasets.load_iris();
+	dataset = readDataSet("D_C_all_AM.csv");
 	data = dataset.data;
-	columns = data.itemsize;
-	#data = data[:columns-2];
+	columns = data.shape[1] - 2;
+	data = data[..., columns];
 	target = dataset.target;
-	print(data[1:10]);
+	print(data);
 	#kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
 	#labels = kmeans.labels_;
 	#silhouette_scores = metrics.silhouette_samples(data, labels, metric='euclidean');
