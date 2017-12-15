@@ -11,12 +11,11 @@ def main():
 	dataset = readDataSet("D_C_all_AM.csv");
 	data = dataset.data;
 	columns = data.shape[1] - 2;
-	data = data[..., columns];
+	data = data[..., 0:columns];
 	target = dataset.target;
-	print(data);
-	#kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
-	#labels = kmeans.labels_;
-	#silhouette_scores = metrics.silhouette_samples(data, labels, metric='euclidean');
+	kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
+	labels = kmeans.labels_;
+	silhouette_scores = metrics.silhouette_samples(data, labels, metric='euclidean');
 	#print (silhouette_scores);
 
 
