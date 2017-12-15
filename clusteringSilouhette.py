@@ -10,9 +10,10 @@ def main():
 	#dataset = datasets.load_iris();
 	dataset = readDataSet("D_C_all_AM.csv");
 	data = dataset.data;
-	columns = data.shape[1] - 2;
-	data = data[..., 0:columns];
+	columns = data.shape[1] - 2; # Numero de columnas menos las dos ultimas con valores categoricos
+	data = data[..., 0:columns]; # Remover columnas con valores categoricos
 	target = dataset.target;
+	print(target);
 	kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
 	labels = kmeans.labels_;
 	silhouette_scores = metrics.silhouette_samples(data, labels, metric='euclidean');
