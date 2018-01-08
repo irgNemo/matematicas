@@ -2,6 +2,7 @@
 
 from sklearn import datasets;
 from sklearn.cluster import KMeans;
+from sklearn.preprocessing import Imputer
 from sklearn import metrics;
 import pandas as pd;
 import numpy as np;
@@ -13,10 +14,14 @@ def main():
 	columns = data.shape[1] - 2; # Numero de columnas menos las dos ultimas con valores categoricos
 	data = data[..., 0:columns]; # Remover columnas con valores categoricos
 	target = dataset.target;
-	print(target);
-	kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
-	labels = kmeans.labels_;
-	silhouette_scores = metrics.silhouette_samples(data, labels, metric='euclidean');
+	#print(data);
+	# Impute
+	imp = Imputer(missing_values='?', strategy='mean', axis=0);
+	imp.fit(data);
+	# Clustering
+	#kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
+	#labels = kmeans.labels_;
+	#silhouette_scores = metrics.silhouette_samples(data, labels, metric='euclidean');
 	#print (silhouette_scores);
 
 
