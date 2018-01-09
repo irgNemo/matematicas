@@ -11,13 +11,18 @@ def main():
 	#dataset = datasets.load_iris();
 	dataset = readDataSet("D_C_all_AM.csv");
 	data = dataset.data;
+
+	# Remover columnas y convertir arreglo en tipo float
 	columns = data.shape[1] - 2; # Numero de columnas menos las dos ultimas con valores categoricos
 	data = data[..., 0:columns]; # Remover columnas con valores categoricos
 	target = dataset.target;
-	#print(data);
+	data = np.asarray(data, dtype=float);
+	print(np.nan_to_num(data));
+	
 	# Impute
-	imp = Imputer(missing_values='?', strategy='mean', axis=0);
-	imp.fit(data);
+	#imp = Imputer(missing_values='?', strategy='mean', axis=0);
+	#imp.fit(data);
+	
 	# Clustering
 	#kmeans = KMeans(n_clusters=3, random_state=1).fit(data);
 	#labels = kmeans.labels_;
