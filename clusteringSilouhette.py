@@ -18,7 +18,9 @@ def main():
 	target = dataset.target;
 	data = np.asarray(data, dtype=float);
 	print(np.nan_to_num(data));
-	
+	data[np.isnan(data)] = np.inf;
+	print(data);
+		
 	# Impute
 	#imp = Imputer(missing_values='?', strategy='mean', axis=0);
 	#imp.fit(data);
