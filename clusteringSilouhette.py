@@ -11,18 +11,64 @@ def main():
 
 	dataset = readDataSet("D_C_all_AM.csv");
 	data = dataset.data;
-	extractedData = dropColumnsByHeader(dataset, ['Sujeto','clase']);
-	imputeTo(extractedData, 1.7976931348623157e+108); # Se asigno este valor de manera arbitraria para que no marcara un error de validacion por valores muy grandes
-	sujetos = extractColumnsByHeader(dataset, ['Sujeto']);
-	# Clustering
-	kmeans = KMeans(n_clusters=2, n_init=300, max_iter=500)
-	cluster_labels = kmeans.fit_predict(extractedData);
-	silhouette_scores = metrics.silhouette_samples(extractedData, cluster_labels, metric='euclidean');
-	silhouette_scores = np.reshape(silhouette_scores, (22,1));
-	results = np.stack((sujetos,silhouette_scores),axis=-1);
-	print(results);
+	extractedData = dropColumnsByHeader(dataset, ['Sujeto','clase']); # Obtenemos la matriz de datos sin los metadatos
+	imputeNaN(extractedData, 1.7976931348623157e+108); # Se asigno este valor de manera arbitraria para que no marcara un error de validacion por valores muy grandes
+	sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
+	clases = extractColumnsByHeader(dataset, ['clase']);
+	#clusteringAndSilhouette(extractedData, 2, 300, 500, metric='euclidean');
+	silhouette_scores = cohesionBySilhouette(extractedData, clases.flatten(), 'euclidean'); # Se obtiene los scores de silhouette para el conjunto de datos utilizando la etiquetas de clase como sus clusters 
+	silhouette_clase = np.append(clases, silhouette_scores, axis=1); # Se crea una matriz que contiene a los sujetos y sus score de silhouettea
+	silhouette_clases_sujetos = np.append(silhouette_clase, sujetos, axis=1);
+	sujetos_silhouette_menor_cero = filterByColumnValues(silhouette_clases_sujetos, 'lt', 1, 0);
+	print(sujetos_silhouette_menor_cero);
+	print(validateLessEqualPercentage(extractedData, sujetos_silhouette_menor_cero, 40));
 
-def imputeTo(data, newValue):
+
+def validateLessEqualPercentage(data, subdata, threshold):
+	"""
+	Validate
+	return: True or False
+	"""
+	row_data_size = data.shape[0];
+	row_subdata_size = subdata.shape[0];
+
+	return True if (((row_subdata_size*100)/row_data_size) <= threshold) else False;
+
+
+def filterByColumnValues(data, condition, columnToAnalyse, threshold):
+	"""
+	Filter
+	"""
+	indexes = None;
+	if condition == 'lt':
+		indexes = np.argwhere(data[..., columnToAnalyse] >= threshold);
+		indexes = indexes.flatten();
+	else:
+		print('implement condition');
+
+	newData = np.delete(data, indexes, 0);
+	return newData;
+	
+
+def cohesionBySilhouette(data, clases, metric='euclidean'):
+	""" 
+	Measure the cohesion of a group of elements tagged by a clas	
+	return: Array with silhouette scores and cluster label asigned
+	"""
+	silhouette_scores = metrics.silhouette_samples(data, clases, metric);
+	silhouette_scores = np.reshape(silhouette_scores, (22,1));
+	return silhouette_scores;	
+
+def clusteringAndSilhouette(data, n_clusters, n_init, max_iter, metric='euclidean'):
+	kmeans = KMeans(n_clusters=n_clusters, n_init=n_init, max_iter=max_iter);
+	cluster_labels = kmeans.fit_predict(data);
+	silhouette_scores = metrics.silhouette_samples(data, cluster_labels, metric);
+	silhouette_scores = np.reshape(silhouette_scores, (22,1));
+	cluster_labels = np.reshape(cluster_labels, (22,1));
+	silhouette_scores = np.append(silhouette_scores, cluster_labels, axis=1);
+	return	silhouette_scores;
+
+def imputeNaN(data, newValue):
 	""" 
 	Impute the NaN values in the 'data' matrix, with the value specified in 'newValue'
 	"""
