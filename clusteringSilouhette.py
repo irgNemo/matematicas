@@ -7,6 +7,7 @@ from sklearn import metrics;
 import pandas as pd;
 import numpy as np;
 from pathlib import Path;
+import re;
 
 def main():
 
@@ -17,21 +18,51 @@ def main():
 	clases = ['AM', 'MB'];
 	directoryPath = "./Datasets/";
 	
-	computeOutliersPerTimeGenderBand(tiempos, generos, bandas, metricas, clases, directoryPath);
+	outliers = computeOutliersPerTimeGenderBand(tiempos, generos, bandas, metricas, clases, directoryPath, 110);
+	print(outliers);
+	#outliersUnionPerBand(outliers);
 
 
-def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, directoryPath):
+def outliersUnionPerBand(outliersPerBand):
+	
+	unionPerBand = dict();
+	for band in outliersPerBand:
+		unionPerMetric = dict();
+		for metric in outliersPerBand[band]:
+			unionPerMetric[metric] = None;
+			for clase in outliersPerBand[band][metric]:
+				#print(outliersPerBand[band][metric][clase]);
+				sujetos = outliersPerBand[band][metric][clase][..., 2]; # TODO Ver si los seleccionamos por cabecera
+				if unionPerMetric[metric] is None:
+					unionPerMetric[metric] = sujetos;
+				else:
+					unionPerMetric[metric] = np.union1d(unionPerMetric[metric], sujetos);
+		unionPerBand[band] = unionPerMetric;
+	print(unionPerBand);
+
+def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, directoryPath, outliersThreshold):
+# TODO Pasar las cabeceras de metadatos
+	#outliersPerBand = dict();
+	outlier = dict();
 	for time in times:
+		outlier[time] = dict();
 		for gender in genders:
+			outlier[time][gender] = dict();
 			for band in bands:
+				outlier[time][gender][band] = dict();
+				outliersPerMetric = dict();
 				for metric in metrics:
+					outlier[time][gender][band][metric] = dict();
+					outliersPerClass = dict();
 					for clase in clases:
 						filename = time + "_" + metric + "_" + band + "_" + gender + "_" + clase;
 						completePathFile = directoryPath + filename + ".csv";
 						my_file = Path(completePathFile);
+						classMatch= re.search('(.*)M(.*)', clase);
+						classToAnalyse = "".join(classMatch.groups());
+						
 						if not my_file.is_file(): # If the file not exists, continues with the following one
 							continue;
-						print(completePathFile);
 						dataset = readDataSet(completePathFile);
 						data = dataset.data;
 						extractedData = dropColumnsByHeader(dataset, ['Sujeto','Clase']); # Obtenemos la matriz de datos sin los metadatos
@@ -40,7 +71,29 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 						clasesnarray = extractColumnsByHeader(dataset, ['Clase']);
 						sujetos_menores_cero = detectOutliers(extractedData, clasesnarray, sujetos, 'euclidean', 0, '<', 1);
 						sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M');
-						print(sujetos_sin_medios.shape);
+						
+						rowPerClass = countRowsWhere(clasesnarray, 0, classToAnalyse);
+						rowPerOutliers = countRowsWhere(sujetos_sin_medios, 0, classToAnalyse);
+						
+						percentageOutliers = (rowPerOutliers/rowPerClass)*100;
+						
+						if percentageOutliers < outliersThreshold:
+							outliersPerClass[classToAnalyse] = sujetos_sin_medios;
+
+					if outliersPerClass:
+						#outliersPerMetric[metric] = outliersPerClass;
+						outlier[time][gender][band][metric][classToAnalyse] = outliersPerClass;
+			
+				if outliersPerMetric:
+					outlier[time][gender][band] = outliersPerMetric;
+	return outlier;
+
+				
+
+def countRowsWhere(data, columnToAnylise, searchValue):
+	indexes = np.argwhere(data[..., columnToAnylise] == searchValue);
+	return indexes.flatten().size;
+
 
 
 def detectOutliers(data, clases, sujetos, metric, threshold, condition, columnToAnalyse):
@@ -109,6 +162,10 @@ def imputeNaN(data, newValue):
 	"""
 	data[np.isnan(data)] = newValue; # Se asigno este valor de manera arbitraria para que no marcara un error de validacion por valores muy grandes
 	
+def extractColumnsByIndex(data, index):
+	data = data[..., index]; # Remover columnas con valores categoricos
+	return data;
+
 def extractColumnsByHeader(dataset, headerNameToExtract):
 	headers = dataset.header;
 	data = dataset.data;
