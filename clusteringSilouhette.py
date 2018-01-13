@@ -45,9 +45,9 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 	#outliersPerBand = dict();
 	outlier = dict();
 	for time in times:
-		outlier[time] = dict();
+	#	outlier[time] = dict();
 		for gender in genders:
-			outlier[time][gender] = dict();
+			#outlier[time][gender] = dict();
 			for band in bands:
 				outlier[time][gender][band] = dict();
 				outliersPerMetric = dict();
@@ -81,11 +81,16 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 							outliersPerClass[classToAnalyse] = sujetos_sin_medios;
 
 					if outliersPerClass:
+						if not outlier[time]:
+							outlier[time] = dict();
+							if not outlier[time][gende]:
+								outlier[time][gender] = dict();
+
 						#outliersPerMetric[metric] = outliersPerClass;
 						outlier[time][gender][band][metric][classToAnalyse] = outliersPerClass;
 			
-				if outliersPerMetric:
-					outlier[time][gender][band] = outliersPerMetric;
+				#if outliersPerMetric:
+				#	outlier[time][gender][band] = outliersPerMetric;
 	return outlier;
 
 				
