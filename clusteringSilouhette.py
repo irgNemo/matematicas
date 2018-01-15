@@ -32,11 +32,11 @@ def outliersUnionPerBand(outliers):
 				for metric in outliers[time][gender][band]:
 					for clase in outliers[time][gender][band][metric]:
 						sujetos = outliers[time][gender][band][metric][clase][..., 2]; # TODO Ver si los seleccionamos por cabecera en lugar del indice
-						if time is not union:
+						if time not in union:
 							union[time] = dict();
-							if gender is not union[time]:
+							if gender not in union[time]:
 								union[time][gender] = dict();
-								if band is not union[time][gender]:
+								if band not in union[time][gender]:
 									union[time][gender][band] = None;
 						
 						if union[time][gender][band] is None:
