@@ -19,40 +19,40 @@ def main():
 	directoryPath = "./Datasets/";
 	
 	outliers = computeOutliersPerTimeGenderBand(tiempos, generos, bandas, metricas, clases, directoryPath, 110);
-	print(outliers);
-	#outliersUnionPerBand(outliers);
+	union = outliersUnionPerBand(outliers);
+	print(union);
 
 
-def outliersUnionPerBand(outliersPerBand):
+def outliersUnionPerBand(outliers):
 	
-	unionPerBand = dict();
-	for band in outliersPerBand:
-		unionPerMetric = dict();
-		for metric in outliersPerBand[band]:
-			unionPerMetric[metric] = None;
-			for clase in outliersPerBand[band][metric]:
-				#print(outliersPerBand[band][metric][clase]);
-				sujetos = outliersPerBand[band][metric][clase][..., 2]; # TODO Ver si los seleccionamos por cabecera
-				if unionPerMetric[metric] is None:
-					unionPerMetric[metric] = sujetos;
-				else:
-					unionPerMetric[metric] = np.union1d(unionPerMetric[metric], sujetos);
-		unionPerBand[band] = unionPerMetric;
-	print(unionPerBand);
+	union = dict();
+	for time in outliers:
+		for gender in outliers[time]:
+			for band in outliers[time][gender]:
+				for metric in outliers[time][gender][band]:
+					for clase in outliers[time][gender][band][metric]:
+						sujetos = outliers[time][gender][band][metric][clase][..., 2]; # TODO Ver si los seleccionamos por cabecera en lugar del indice
+						if time is not union:
+							union[time] = dict();
+							if gender is not union[time]:
+								union[time][gender] = dict();
+								if band is not union[time][gender]:
+									union[time][gender][band] = None;
+						
+						if union[time][gender][band] is None:
+							union[time][gender][band] = sujetos;
+						else:
+							union[time][gender][band] = np.union1d(union[time][gender][band], sujetos);
+							
+	return union;
 
 def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, directoryPath, outliersThreshold):
 # TODO Pasar las cabeceras de metadatos
-	#outliersPerBand = dict();
 	outlier = dict();
 	for time in times:
-	#	outlier[time] = dict();
 		for gender in genders:
-			#outlier[time][gender] = dict();
 			for band in bands:
-				outlier[time][gender][band] = dict();
-				outliersPerMetric = dict();
 				for metric in metrics:
-					outlier[time][gender][band][metric] = dict();
 					outliersPerClass = dict();
 					for clase in clases:
 						filename = time + "_" + metric + "_" + band + "_" + gender + "_" + clase;
@@ -81,19 +81,17 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 							outliersPerClass[classToAnalyse] = sujetos_sin_medios;
 
 					if outliersPerClass:
-						if not outlier[time]:
+						if time not in outlier:
 							outlier[time] = dict();
-							if not outlier[time][gende]:
+							if gender not in outlier[time]:
 								outlier[time][gender] = dict();
+								if band not in outlier[time][gender]:
+									outlier[time][gender][band] = dict();
+									if metric not in outlier[time][gender][band]:
+										outlier[time][gender][band][metric] = dict();
 
-						#outliersPerMetric[metric] = outliersPerClass;
-						outlier[time][gender][band][metric][classToAnalyse] = outliersPerClass;
-			
-				#if outliersPerMetric:
-				#	outlier[time][gender][band] = outliersPerMetric;
+						outlier[time][gender][band][metric] = outliersPerClass;
 	return outlier;
-
-				
 
 def countRowsWhere(data, columnToAnylise, searchValue):
 	indexes = np.argwhere(data[..., columnToAnylise] == searchValue);
