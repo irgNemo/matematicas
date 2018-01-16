@@ -11,20 +11,37 @@ import re;
 
 def main():
 
-	tiempos = ['Durante','Despues'];
+	tiempos = ['D','Ds'];
 	generos = ['H','M'];
-	bandas = ['sf','a','b','d','g','t'];
+	bandas = ['all','a','b','d','g','theta'];
 	metricas = ['C','E','Gio'];
 	clases = ['AM', 'MB'];
-	directoryPath = "./Datasets/";
+	directoryPath = "./datasets/";
 	
-	outliers = computeOutliersPerTimeGenderBand(tiempos, generos, bandas, metricas, clases, directoryPath, 110);
+	outliers = computeOutliersPerTimeGenderBand(tiempos, generos, bandas, metricas, clases, directoryPath, 40);
 	union = outliersUnionPerBand(outliers);
-	print(union);
+	outliersReport(outliers, union);
 
-
-def outliersUnionPerBand(outliers):
+def outliersReport(outliers, outlierUnion):
+	#print("Generando reporte");
+	separador = "-";
+	for time in outliers:
+		for gender in outliers[time]:
+			for band in outliers[time][gender]:
+				print("General: " + time + separador + gender + separador + band);
+				for metric in outliers[time][gender][band]:
+					cabecera = time + separador + gender + separador + band + separador + metric;
+					print("\nMetrica: " + metric);
+					for clase in outliers[time][gender][band][metric]:
+						print("Clase: " + clase);
+						print(outliers[time][gender][band][metric][clase][...,2]);
+				print("\nUnion: "); 
+				print(outlierUnion[time][gender][band]);
+				print("---------------------------------------------------------");
+				print("\n");
 	
+def outliersUnionPerBand(outliers):
+	#print("Uniendo outliers");
 	union = dict();
 	for time in outliers:
 		for gender in outliers[time]:
@@ -34,10 +51,10 @@ def outliersUnionPerBand(outliers):
 						sujetos = outliers[time][gender][band][metric][clase][..., 2]; # TODO Ver si los seleccionamos por cabecera en lugar del indice
 						if time not in union:
 							union[time] = dict();
-							if gender not in union[time]:
-								union[time][gender] = dict();
-								if band not in union[time][gender]:
-									union[time][gender][band] = None;
+						if gender not in union[time]:
+							union[time][gender] = dict();
+						if band not in union[time][gender]:
+							union[time][gender][band] = None;
 						
 						if union[time][gender][band] is None:
 							union[time][gender][band] = sujetos;
@@ -48,6 +65,7 @@ def outliersUnionPerBand(outliers):
 
 def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, directoryPath, outliersThreshold):
 # TODO Pasar las cabeceras de metadatos
+	#print("Calculando outliers");
 	outlier = dict();
 	for time in times:
 		for gender in genders:
@@ -55,7 +73,7 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 				for metric in metrics:
 					outliersPerClass = dict();
 					for clase in clases:
-						filename = time + "_" + metric + "_" + band + "_" + gender + "_" + clase;
+						filename = time + "_" + gender + "_" + band + "_" + metric + "_" + clase;
 						completePathFile = directoryPath + filename + ".csv";
 						my_file = Path(completePathFile);
 						classMatch= re.search('(.*)M(.*)', clase);
@@ -63,12 +81,13 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 						
 						if not my_file.is_file(): # If the file not exists, continues with the following one
 							continue;
+						#print(completePathFile);
 						dataset = readDataSet(completePathFile);
 						data = dataset.data;
-						extractedData = dropColumnsByHeader(dataset, ['Sujeto','Clase']); # Obtenemos la matriz de datos sin los metadatos
+						extractedData = dropColumnsByHeader(dataset, ['Sujeto','clase']); # Obtenemos la matriz de datos sin los metadatos
 						imputeNaN(extractedData, 1.7976931348623157e+108); # Se asigno este valor de manera arbitraria para que no marcara un error de validacion por valores muy grandes
 						sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
-						clasesnarray = extractColumnsByHeader(dataset, ['Clase']);
+						clasesnarray = extractColumnsByHeader(dataset, ['clase']);
 						sujetos_menores_cero = detectOutliers(extractedData, clasesnarray, sujetos, 'euclidean', 0, '<', 1);
 						sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M');
 						
@@ -83,13 +102,13 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 					if outliersPerClass:
 						if time not in outlier:
 							outlier[time] = dict();
-							if gender not in outlier[time]:
-								outlier[time][gender] = dict();
-								if band not in outlier[time][gender]:
-									outlier[time][gender][band] = dict();
-									if metric not in outlier[time][gender][band]:
-										outlier[time][gender][band][metric] = dict();
-
+						if gender not in outlier[time]:
+							outlier[time][gender] = dict();
+						if band not in outlier[time][gender]:
+							outlier[time][gender][band] = dict();
+						if metric not in outlier[time][gender][band]:
+							outlier[time][gender][band][metric] = dict();
+						
 						outlier[time][gender][band][metric] = outliersPerClass;
 	return outlier;
 
@@ -227,7 +246,6 @@ if __name__ == "__main__":
 			sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
 			clases = extractColumnsByHeader(dataset, ['Clase']);
 			sujetos_menores_cero = detectOutliers(extractedData, clases, sujetos, 'euclidean', 0, 'lt', 1);
-			print(sujetos_menores_cero);
 			#if not validateLessEqualPercentage(extractedData, sujetos_menores_cero, 40):
 			#	print("Outlayers mayores al porcentaje en archivo: " + filename);	
 	"""
