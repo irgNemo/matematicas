@@ -103,7 +103,7 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 						
 						percentageOutliers = (rowPerOutliers/rowPerClass)*100;
 						
-						if percentageOutliers < outliersThreshold:
+						if (percentageOutliers < outliersThreshold) and (sujetos_sin_medios.size > 0):
 							outliersPerClass[classToAnalyse] = sujetos_sin_medios;
 
 					if outliersPerClass:
