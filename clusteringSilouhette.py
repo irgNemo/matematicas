@@ -9,14 +9,21 @@ import numpy as np;
 from pathlib import Path;
 import re;
 
+# Revisiones antes de ejecutar
+# 1.- La estructura de los nombres de los archivos en donde se construye el nombre linea 80 
+# 2.- Los nombres de los tiempos, generos, bandas, metricas, clases que estan en el main. Linea 18 - 22
+# 3.- Revisar el nombre del directorio contenedor de los conjuntos de datos (Datasets). Cambiar si es necesario.
+# 4.- Cambiar los valores de las cabeceras de los archivos. E.j "Sujeto" y "Clase" para que coincidan con el del contenido del archivo. TODO Corregir esto urgentemente
+
+
 def main():
 
-	tiempos = ['D','Ds'];
+	tiempos = ['durante','despues'];
 	generos = ['H','M'];
-	bandas = ['all','a','b','d','g','theta'];
+	bandas = ['sf','alpha','beta','gamma','delta','theta'];
 	metricas = ['C','E','Gio'];
 	clases = ['AM', 'MB'];
-	directoryPath = "./datasets/";
+	directoryPath = "./Datasets/";
 	
 	outliers = computeOutliersPerTimeGenderBand(tiempos, generos, bandas, metricas, clases, directoryPath, 40);
 	union = outliersUnionPerBand(outliers);
@@ -73,7 +80,7 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 				for metric in metrics:
 					outliersPerClass = dict();
 					for clase in clases:
-						filename = time + "_" + gender + "_" + band + "_" + metric + "_" + clase;
+						filename = time + "_" + metric + "_" + band + "_" + gender + "_" + clase;
 						completePathFile = directoryPath + filename + ".csv";
 						my_file = Path(completePathFile);
 						classMatch= re.search('(.*)M(.*)', clase);
@@ -84,10 +91,10 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 						#print(completePathFile);
 						dataset = readDataSet(completePathFile);
 						data = dataset.data;
-						extractedData = dropColumnsByHeader(dataset, ['Sujeto','clase']); # Obtenemos la matriz de datos sin los metadatos
+						extractedData = dropColumnsByHeader(dataset, ['Sujeto','Clase']); # Obtenemos la matriz de datos sin los metadatos
 						imputeNaN(extractedData, 1.7976931348623157e+108); # Se asigno este valor de manera arbitraria para que no marcara un error de validacion por valores muy grandes
 						sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
-						clasesnarray = extractColumnsByHeader(dataset, ['clase']);
+						clasesnarray = extractColumnsByHeader(dataset, ['Clase']);
 						sujetos_menores_cero = detectOutliers(extractedData, clasesnarray, sujetos, 'euclidean', 0, '<', 1);
 						sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M');
 						
