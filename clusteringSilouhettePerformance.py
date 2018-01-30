@@ -96,16 +96,26 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 						sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
 						clasesnarray = extractColumnsByHeader(dataset, ['Clase']);
 						sujetos_menores_cero = detectOutliers(extractedData, clasesnarray, sujetos, 'euclidean', 0, '<', 1);
-						#sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M');
-						sujetos_sin_medios = sujetos_menores_cero;
+						sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M');
+						sujetos_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, classToAnalyse);
 						
 						rowPerClass = countRowsWhere(clasesnarray, 0, classToAnalyse);
 						rowPerOutliers = countRowsWhere(sujetos_sin_medios, 0, classToAnalyse);
+						mediosPerClass = countRowsWhere(clasesnarray,0,'M');
+						mediosPerOutliers = countRowsWhere(sujetos_medios,0,'M');
 						
-						percentageOutliers = (rowPerOutliers/rowPerClass)*100;
-						
+						percentageOutliers = (rowPerOutliers/rowPerClass) * 100;
+						percentageOutliersMedios = (mediosPerOutliers/mediosPerClass) * 100;
+	
 						if (percentageOutliers < outliersThreshold) and (sujetos_sin_medios.size > 0):
 							outliersPerClass[classToAnalyse] = sujetos_sin_medios;
+
+						if (percentageOutliersMedios < outliersThreshold) and (sujetos_medios.size > 0):
+							if classToAnalyse not in outliersPerClass:
+								outliersPerClass[classToAnalyse] = sujetos_medios;
+							else:
+								outliersPerClass[classToAnalyse] = np.append(outliersPerClass[classToAnalyse], sujetos_medios, 0);
+						
 
 					if outliersPerClass:
 						if time not in outlier:
@@ -236,24 +246,3 @@ class dataWrapper:
 if __name__ == "__main__":
 	main();
 
-
-	"""
-	tuples = filenamesTuples(tiempos, generos, bandas, metricas, clases);
-	for pair in tuples:
-		for filename in pair:
-			completePathFile = directoryPath + filename;
-			my_file = Path(completePathFile);
-			if not my_file.is_file():
-				#print("El archivo " + filename  +  " no fue encontrado");
-				continue;
-			print(completePathFile);
-			dataset = readDataSet(completePathFile);
-			data = dataset.data;
-			extractedData = dropColumnsByHeader(dataset, ['Sujeto','Clase']); # Obtenemos la matriz de datos sin los metadatos
-			imputeNaN(extractedData, 1.7976931348623157e+108); # Se asigno este valor de manera arbitraria para que no marcara un error de validacion por valores muy grandes
-			sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
-			clases = extractColumnsByHeader(dataset, ['Clase']);
-			sujetos_menores_cero = detectOutliers(extractedData, clases, sujetos, 'euclidean', 0, 'lt', 1);
-			#if not validateLessEqualPercentage(extractedData, sujetos_menores_cero, 40):
-			#	print("Outlayers mayores al porcentaje en archivo: " + filename);	
-	"""
