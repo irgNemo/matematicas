@@ -41,7 +41,7 @@ def outliersReport(outliers, outlierUnion):
 					print("\nMetrica: " + metric);
 					for clase in outliers[time][gender][band][metric]:
 						print("Clase: " + clase);
-						print(outliers[time][gender][band][metric][clase][...,2]);
+						print(outliers[time][gender][band][metric][clase]);
 				print("\nUnion: "); 
 				print(outlierUnion[time][gender][band]);
 				print("---------------------------------------------------------");
@@ -55,7 +55,7 @@ def outliersUnionPerBand(outliers):
 			for band in outliers[time][gender]:
 				for metric in outliers[time][gender][band]:
 					for clase in outliers[time][gender][band][metric]:
-						sujetos = outliers[time][gender][band][metric][clase][..., 2]; # TODO Ver si los seleccionamos por cabecera en lugar del indice
+						sujetos = outliers[time][gender][band][metric][clase]; # TODO Ver si los seleccionamos por cabecera en lugar del indice
 						if time not in union:
 							union[time] = dict();
 						if gender not in union[time]:
@@ -79,6 +79,7 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 			for band in bands:
 				for metric in metrics:
 					outliersPerClass = dict();
+					outliersMediosPerClass = dict();
 					for clase in clases:
 						filename = time + "_" + metric + "_" + band + "_" + gender + "_" + clase;
 						completePathFile = directoryPath + filename + ".csv";
@@ -96,27 +97,27 @@ def computeOutliersPerTimeGenderBand(times, genders, bands, metrics, clases, dir
 						sujetos = extractColumnsByHeader(dataset, ['Sujeto']);# Se obtiene una lista de los sujetos
 						clasesnarray = extractColumnsByHeader(dataset, ['Clase']);
 						sujetos_menores_cero = detectOutliers(extractedData, clasesnarray, sujetos, 'euclidean', 0, '<', 1);
-						sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M');
-						sujetos_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, classToAnalyse);
+						sujetos_sin_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, 'M')[...,2];
+						sujetos_medios = removeRowsByColumnValues(sujetos_menores_cero, 'eq', 0, classToAnalyse)[...,2];
+						
 						
 						rowPerClass = countRowsWhere(clasesnarray, 0, classToAnalyse);
-						rowPerOutliers = countRowsWhere(sujetos_sin_medios, 0, classToAnalyse);
+						rowPerOutliers = sujetos_sin_medios.size;#countRowsWhere(sujetos_sin_medios, 0, classToAnalyse);
 						mediosPerClass = countRowsWhere(clasesnarray,0,'M');
-						mediosPerOutliers = countRowsWhere(sujetos_medios,0,'M');
+						mediosPerOutliers = sujetos_medios.size;
 						
 						percentageOutliers = (rowPerOutliers/rowPerClass) * 100;
 						percentageOutliersMedios = (mediosPerOutliers/mediosPerClass) * 100;
 	
 						if (percentageOutliers < outliersThreshold) and (sujetos_sin_medios.size > 0):
 							outliersPerClass[classToAnalyse] = sujetos_sin_medios;
-
-						if (percentageOutliersMedios < outliersThreshold) and (sujetos_medios.size > 0):
-							if classToAnalyse not in outliersPerClass:
-								outliersPerClass[classToAnalyse] = sujetos_medios;
-							else:
-								outliersPerClass[classToAnalyse] = np.append(outliersPerClass[classToAnalyse], sujetos_medios, 0);
 						
-
+						if (percentageOutliersMedios < outliersThreshold) and (sujetos_medios.size > 0):
+							if 'M' not in outliersPerClass:
+								outliersPerClass['M'] = sujetos_medios;
+							else:
+								outliersPerClass['M'] = np.intersect1d(outliersPerClass['M'], sujetos_medios);
+						
 					if outliersPerClass:
 						if time not in outlier:
 							outlier[time] = dict();
